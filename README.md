@@ -1,147 +1,115 @@
-# Meu Dinheiro
+<h1 align="center">Meu Dinheiro</h1>
 
-> Controle de gastos pessoal: quanto entra, quanto sai e quanto sobra — mês a mês.
+<p align="center">
+  Quanto entra, quanto sai e quanto sobra — mês a mês.<br>
+  <sub>Controle de gastos pessoal em JavaScript puro, com Postgres de verdade por trás.</sub>
+</p>
 
-Site estático + **Supabase** (Postgres + login de e-mail e senha). Não tem servidor
-para manter, não tem função para publicar, não tem variável de ambiente: o navegador
-fala direto com o banco.
+<p align="center">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
+  <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase">
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/PWA-5A0FC8?style=flat-square&logo=pwa&logoColor=white" alt="PWA">
+  <img src="https://img.shields.io/badge/sem_build-0f766e?style=flat-square" alt="Sem build">
+</p>
 
-## O que ele faz
+![O painel do Meu Dinheiro](docs/dashboard.png)
 
-- **Entradas e saídas** por mês, com categoria, data e descrição.
-- **Fixo × variável** — quanto do que entra já está comprometido antes de você gastar.
-- **Cartão de crédito**: fatura do mês e quanto ainda falta em parcelas nos próximos.
-- **Meta de economia** mensal, com barra de progresso.
-- **Caixa acumulado**: o que sobrou de cada mês somado, a partir de um saldo inicial.
-- **Gráficos**: saídas por categoria e entradas × saídas nos últimos 6 meses.
-- **Busca** nos lançamentos do mês e **exportação em CSV**.
-- **Dados de exemplo** na primeira vez, para você ver a cara do app antes de digitar nada.
-- **Tema claro e escuro**, e **instalável no celular** (PWA).
+## O problema
 
-## Como está organizado
+Aplicativo de banco mostra extrato, não mostra decisão. Ele diz que você gastou
+R$ 3.181 no mês, mas não diz quanto disso já estava comprometido antes de você
+acordar, quanto ainda vai cair de parcela nos próximos meses, nem se, no ritmo
+atual, sobra alguma coisa no fim.
 
-```
-public/index.html              o app inteiro, numa página só
-public/config.js               os dois valores do seu projeto Supabase (você preenche)
-public/manifest.webmanifest    faz o app ser instalável no celular
-public/sw.js                   service worker: abre rápido e funciona sem internet
-public/icon-*.png              ícones do app
-public/_headers                cabeçalhos de segurança
-supabase.sql                   as tabelas e as regras de acesso
-netlify.toml                   diz ao Netlify que a pasta publicada é "public"
-```
+O Meu Dinheiro responde essas três perguntas numa tela só.
 
-## Por que só você vê os seus dados
+## O que ele mostra
 
-Cada linha das tabelas guarda o `user_id` de quem a criou, e o **RLS** (Row Level
-Security) do Postgres tem uma regra simples: `auth.uid() = user_id`. Quem não
-estiver logado como você não recebe as suas linhas — nem se tiver a chave `anon`,
-que é pública de propósito. A senha nunca passa perto do código: quem cuida dela
-é o Supabase Auth.
+| | |
+|---|---|
+| **Sobrou no mês** | Entradas menos saídas, com barra de progresso contra a meta de economia. |
+| **Fixo × variável** | Quanto das saídas é aluguel-internet-academia (repete sozinho) e quanto é escolha do mês. O app traduz isso em uma frase: *"no ritmo deste mês, o fixo come 29% de tudo que entra"*. |
+| **Fatura do cartão** | O que cai neste mês no crédito — e quanto ainda falta em parcelas **depois** dele. É o número que some do extrato e aparece na fatura. |
+| **Caixa acumulado** | O que sobrou de cada mês, somado desde um saldo inicial, com a curva dos últimos 6 meses. |
+| **Para onde foi** | Saídas por categoria, da maior para a menor. |
+| **Últimos 6 meses** | Entradas e saídas lado a lado, na mesma escala. |
 
----
+Cada lançamento pode ser único, **fixo** (repete todo mês, com data-limite opcional)
+ou **parcelado** — nesse caso você informa o valor total e o app divide sozinho,
+uma parcela por mês, e vai marcando `3/12` na linha.
 
-## Passo a passo (uma vez só, ~10 minutos)
+Tem ainda busca nos lançamentos do mês, exportação em CSV, tema claro e escuro,
+e dados de exemplo na primeira vez — para você ver a cara do app antes de digitar
+qualquer coisa.
 
-### 1. Crie o projeto no Supabase
+<p align="center">
+  <img src="docs/dashboard-escuro.png" alt="O mesmo painel no tema escuro" width="49%">
+  <img src="docs/celular.png" alt="O app no celular" width="20%">
+</p>
 
-Entre em [supabase.com](https://supabase.com) → **New project**. Escolha um nome,
-uma senha de banco (guarde num gerenciador, você quase não vai usar) e a região
-**South America (São Paulo)**. Espere uns 2 minutos até ficar verde.
+## Decisões técnicas
 
-### 2. Crie as tabelas
+**Site estático falando direto com o banco.** Não existe backend neste projeto —
+nenhum servidor Node, nenhuma serverless function, nenhuma variável de ambiente
+para configurar. O navegador conversa direto com o Postgres do Supabase. Isso
+significa zero infraestrutura para manter e um deploy que é arrastar uma pasta.
 
-No menu da esquerda: **SQL Editor** → **New query**. Abra o arquivo
-`supabase.sql`, copie tudo, cole ali e clique em **Run**.
-
-Deve aparecer "Success. No rows returned". Em **Table Editor** você já vê as
-tabelas `lancamentos` e `config`.
-
-### 3. Ajuste o login
-
-Em **Authentication → Sign In / Providers → Email**:
-
-- **desmarque "Confirm email"** — assim a sua conta funciona na hora, sem
-  precisar clicar em link de confirmação.
-
-### 4. Ligue o app ao banco
-
-Em **Project Settings → API**, copie:
-
-- **Project URL** (algo como `https://abcdefgh.supabase.co`)
-- a chave **anon public**
-
-Abra `public/config.js` num editor de texto e cole os dois valores no lugar dos
-`COLE_AQUI_...`. Salve.
-
-> Se preferir não editar arquivo agora, abra o `index.html` mesmo assim: ele mostra
-> uma tela pedindo esses dois valores e guarda no navegador. Serve para testar, mas
-> para o site publicado o certo é preencher o `config.js`.
-
-### 5. Crie a sua conta
-
-Abra `public/index.html` (duplo clique já funciona). Clique em **Criar conta**,
-use o seu e-mail e uma senha, e pronto — você está dentro.
-
-### 6. Feche a porta
-
-Volte ao Supabase, em **Authentication → Sign In / Providers → Email**, e
-**desmarque "Allow new users to sign up"**. A partir daí ninguém mais consegue
-criar conta nesse projeto — só a sua existe.
-
-### 7. Publique no Netlify
-
-[app.netlify.com](https://app.netlify.com) → **Add new site** → **Deploy manually**
-→ arraste **a pasta `public`**.
-
-É só isso. Sem build, sem `npm install`, sem variável de ambiente. Para atualizar
-depois, arraste a pasta de novo em **Deploys**.
-
-> O service worker guarda uma cópia do app no navegador. Depois de publicar uma
-> versão nova, troque o número da versão em `public/sw.js` (`meu-dinheiro-v1` →
-> `v2`) para os navegadores baixarem tudo de novo em vez de usar a cópia antiga.
-
-### 8. Instale no celular
-
-Abra o endereço do site no celular e use **Adicionar à tela de início**
-(no Android o Chrome oferece sozinho). O app abre em tela cheia, com ícone
-próprio, como um aplicativo qualquer.
-
----
-
-## Coisas que você vai querer saber
-
-**Ver os dados crus.** Supabase → **Table Editor** → `lancamentos`. Dá para
-filtrar, ordenar e editar na mão.
-
-**Backup.** Table Editor → menu da tabela → **Download as CSV**. Ou, dentro do
-app, o botão *Baixar CSV do mês*.
-
-**Trocar a senha.** Dentro do app, no rodapé: **Trocar senha**. Se você esqueceu
-e nem entrou, use *Esqueci minha senha* na tela de login — chega um link no seu
-e-mail e o próprio app pede a senha nova quando você volta por ele.
-
-**Entrar pelo celular.** Mesmo endereço do site, mesmo e-mail e senha. Os dados
-são os mesmos, porque estão no banco.
-
-**Consultas suas.** Como é Postgres, dá para brincar no SQL Editor:
+**A segurança fica no banco, não no código.** A chave `anon` é pública de
+propósito: ela sozinha não abre nada. Quem protege os dados é o **RLS** do
+Postgres, com uma regra que vale para toda leitura e toda escrita:
 
 ```sql
--- quanto gastei por categoria neste ano
-select categoria, sum(valor) as total
-from lancamentos
-where tipo = 'saida' and data >= date_trunc('year', now())
-group by categoria
-order by total desc;
+alter table public.lancamentos enable row level security;
+
+create policy "cada um mexe nos proprios lancamentos"
+  on public.lancamentos for all to authenticated
+  using      (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 ```
 
----
+Mesmo que alguém pegue a chave no código-fonte da página, o banco só devolve as
+linhas de quem está logado. A senha nunca passa perto do meu código — quem cuida
+dela é o Supabase Auth.
+
+**Recorrência calculada, não materializada.** Um gasto fixo é **uma** linha no
+banco, não doze. Quando você navega para outubro, o app projeta quais lançamentos
+aparecem naquele mês e com que valor. Isso mantém a tabela pequena, deixa a edição
+retroativa trivial (mudou o aluguel, mudou em todos os meses) e evita o clássico
+problema de "gerar as próximas ocorrências" que nunca gera na hora certa.
+
+**Sem framework e sem build.** São ~1.400 linhas em um `index.html`: HTML, CSS
+com variáveis para os dois temas, e JavaScript sem dependência além do cliente do
+Supabase. Não porque framework seja ruim, mas porque para esse tamanho de app ele
+seria a parte mais pesada do projeto: a página inteira pesa menos que o bundle
+mínimo de qualquer um deles.
+
+**Instalável.** Manifest, ícones e service worker: dá para adicionar à tela de
+início do celular e abrir em tela cheia. A casca do app fica em cache, então ele
+abre offline (os dados, claro, precisam da rede).
 
 ## Stack
 
-JavaScript puro (sem framework, sem build) · Supabase (Postgres + Auth + RLS) ·
-Netlify · PWA com service worker.
+`JavaScript` · `Supabase (Postgres + Auth + Row Level Security)` · `Netlify` · `PWA / Service Worker`
+
+## Estrutura
+
+```
+public/index.html              o app inteiro, numa página só
+public/config.js               URL e chave anon do projeto Supabase
+public/manifest.webmanifest    metadados de instalação
+public/sw.js                   service worker (cache da casca do app)
+public/_headers                cabeçalhos de segurança
+supabase.sql                   tabelas, índices e políticas de RLS
+docs/SETUP.md                  como rodar isso na sua máquina
+```
+
+## Rodando
+
+O passo a passo completo está em **[docs/SETUP.md](docs/SETUP.md)** — criar o
+projeto no Supabase, rodar o SQL, ligar o app e publicar.
 
 ## Licença
 
-[MIT](LICENSE) — feito por [Kauan Fernandes](https://github.com/Kauanpfernandes).
+[MIT](LICENSE) — feito por [Kauan Fernandes](https://github.com/Kauanpfernandes) ·
+[dev.fernandes](https://instagram.com/dev.fernandes)
