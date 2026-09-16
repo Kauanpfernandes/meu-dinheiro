@@ -1,0 +1,3 @@
+# Site 100% estático: nada para compilar, nada para instalar.
+[build]
+  publish = "public"
