@@ -19,8 +19,8 @@ tabelas `lancamentos` e `config`.
 
 ## 3. Ajuste o login
 
-Em **Authentication → Sign In / Providers → Email**, desmarque **"Confirm email"** —
-assim a conta funciona na hora, sem link de confirmação.
+Em **Authentication → Sign In / Providers → Email**, desmarque **"Confirm email"**.
+Assim a conta funciona na hora, sem link de confirmação.
 
 ## 4. Ligue o app ao banco
 
@@ -69,7 +69,7 @@ o Chrome oferece sozinho). O app abre em tela cheia, com ícone próprio.
 o botão *Baixar CSV do mês*.
 
 **Trocar a senha.** No rodapé do app: **Trocar senha**. Esqueceu e nem entrou? Use
-*Esqueci minha senha* na tela de login — o app detecta a volta pelo link do e-mail
+*Esqueci minha senha* na tela de login. O app detecta a volta pelo link do e-mail
 e já pede a senha nova.
 
 **Consultas suas.** É Postgres, então dá para brincar no SQL Editor:
