@@ -161,6 +161,8 @@ a{color:var(--accent)}
 .tablecard{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden}
 .tablehead{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:16px 18px 14px}
 .tablehead h2{font-family:"Fraunces", Georgia, serif; font-size:17px; font-weight:600}
+.demolink{margin-top:14px; text-align:center}
+.demolink .linkbtn{font-size:12.5px}
 .tableacts{display:flex; align-items:center; gap:10px; flex-wrap:nowrap; margin-left:auto}
 .tableacts .btn{white-space:nowrap}
 .busca{width:200px; max-width:100%; padding:7px 10px !important; font-size:13px !important; border-radius:8px !important}
@@ -257,8 +259,11 @@ input:focus, select:focus, textarea:focus{outline:2px solid var(--accent); outli
         <button class="btn" type="submit">Conectar</button>
       </form>
       <div class="err" id="setupErr"></div>
-      <p class="subnote">A chave <i>anon</i> é pública de propósito — quem protege os seus dados é o RLS
+      <p class="subnote">A chave <i>anon</i> é pública de propósito. Quem protege os seus dados é o RLS
         do banco, que só devolve as linhas da sua conta.</p>
+      <p class="subnote demolink">Só quer ver como é?
+        <button class="linkbtn" id="verDemo2">Abrir a demonstração</button>
+      </p>
     </div>
   </div>
 </div>
@@ -279,6 +284,9 @@ input:focus, select:focus, textarea:focus{outline:2px solid var(--accent); outli
       <button class="linkbtn" id="toggleModo">Criar conta</button>
       <button class="linkbtn" id="esqueci">Esqueci minha senha</button>
     </div>
+    <p class="subnote demolink">Só quer ver como é?
+      <button class="linkbtn" id="verDemo">Abrir a demonstração</button>
+    </p>
   </div>
 </div>
 
@@ -302,7 +310,7 @@ input:focus, select:focus, textarea:focus{outline:2px solid var(--accent); outli
   </div>
 
   <div class="demo" id="demo" hidden>
-    <span><b>Estes são dados de exemplo</b> — para você ver como fica. Nada foi salvo no banco ainda.</span>
+    <span id="demoTexto"><b>Estes são dados de exemplo</b>, para você ver como fica. Nada foi salvo no banco ainda.</span>
     <button class="btn ghost small" id="clearDemo">Começar do zero</button>
   </div>
 
@@ -540,7 +548,8 @@ var CATS = {
 
 /* ==================== estado ==================== */
 var sb = null, sessao = null;
-var state = { mes: mesDe(hojeISO()), itens: [], meta: 0, saldoInicial: 0, demo: false };
+var state = { mes: mesDe(hojeISO()), itens: [], meta: 0, saldoInicial: 0, demo: false, publico: false };
+var seqLocal = 0;
 
 function exemplos(){
   var m = mesDe(hojeISO()), m2 = addMes(m,-2), m3 = addMes(m,-3);
@@ -613,6 +622,7 @@ function carregarDados(){
 }
 
 function salvarConfig(){
+  if(state.publico){ marcarEstado(estadoDemo(), false); return Promise.resolve(); }
   marcarEstado('salvando…', false);
   return sb.from('config').upsert({
     user_id: sessao.user.id,
@@ -933,6 +943,7 @@ function toast(msg){
 
 /* ==================== mutações ==================== */
 function sairDoDemo(){
+  if(state.publico) return;
   if(!state.demo) return;
   state.demo = false;
   state.itens = [];
@@ -942,6 +953,13 @@ function sairDoDemo(){
 }
 
 function inserir(item){
+  if(state.publico){
+    item.id = 'local-' + (++seqLocal);
+    state.itens.push(item);
+    render();
+    marcarEstado(estadoDemo(), false);
+    return;
+  }
   sairDoDemo();
   marcarEstado('salvando…', false);
   sb.from('lancamentos').insert(praBase(item)).select().single().then(function(r){
@@ -953,10 +971,11 @@ function inserir(item){
 }
 
 function atualizar(item){
-  marcarEstado('salvando…', false);
   var i = state.itens.findIndex(function(x){ return x.id === item.id; });
   if(i > -1) state.itens[i] = item;
   render();
+  if(state.publico){ marcarEstado(estadoDemo(), false); return; }
+  marcarEstado('salvando…', false);
   sb.from('lancamentos').update(praBase(item)).eq('id', item.id).then(function(r){
     if(r.error) return erroBanco(r.error, 'atualizar o lançamento');
     marcarEstado(agora(), false);
@@ -964,10 +983,11 @@ function atualizar(item){
 }
 
 function apagar(id){
-  marcarEstado('salvando…', false);
   var antes = state.itens.slice();
   state.itens = state.itens.filter(function(x){ return x.id !== id; });
   render();
+  if(state.publico){ marcarEstado(estadoDemo(), false); return; }
+  marcarEstado('salvando…', false);
   sb.from('lancamentos').delete().eq('id', id).then(function(r){
     if(r.error){ state.itens = antes; render(); return erroBanco(r.error, 'excluir o lançamento'); }
     marcarEstado(agora(), false);
@@ -1154,7 +1174,7 @@ el('today').addEventListener('click', function(){ state.mes = mesDe(hojeISO()); 
 document.addEventListener('click', function(e){
   var b = e.target.closest ? e.target.closest('[data-edit]') : null;
   if(!b) return;
-  if(state.demo){
+  if(state.demo && !state.publico){
     toast('Estes são dados de exemplo. Clique em "Começar do zero" para lançar os seus.');
     return;
   }
@@ -1190,6 +1210,11 @@ el('clearDemo').addEventListener('click', function(){
 
 el('wipe').addEventListener('click', function(){
   if(!window.confirm('Isso apaga TODOS os seus lançamentos no banco, a meta e o saldo inicial. Tem certeza?')) return;
+  if(state.publico){
+    state.itens = []; state.meta = 0; state.saldoInicial = 0;
+    render(); marcarEstado(estadoDemo(), false); toast('Tudo apagado (só aqui no seu navegador).');
+    return;
+  }
   if(state.demo){ sairDoDemo(); render(); return; }
   marcarEstado('apagando…', false);
   sb.from('lancamentos').delete().eq('user_id', sessao.user.id).then(function(r){
@@ -1201,6 +1226,7 @@ el('wipe').addEventListener('click', function(){
 });
 
 el('sair').addEventListener('click', function(){
+  if(state.publico){ location.href = location.pathname; return; }
   sb.auth.signOut().then(function(){ location.reload(); });
 });
 
@@ -1345,6 +1371,31 @@ el('gform').addEventListener('submit', function(e){
   });
 });
 
+/* ==================== demonstração pública ==================== */
+function estadoDemo(){
+  return 'demonstração · nada sai do seu navegador';
+}
+
+function abrirDemo(){
+  state.publico = true;
+  state.demo = true;
+  state.itens = exemplos();
+  state.meta = 1000;
+  state.saldoInicial = 0;
+  el('splash').hidden = true;
+  el('setup').hidden = true;
+  el('gate').hidden = true;
+  el('app').hidden = false;
+  el('demo').hidden = false;
+  el('demoTexto').innerHTML = '<b>Você está na demonstração.</b> Os números são inventados, ' +
+    'e dá para lançar, editar e navegar à vontade: nada é salvo, nada sai do seu navegador.';
+  el('clearDemo').textContent = 'Limpar a tela';
+  el('senha').hidden = true;
+  el('sair').textContent = 'Voltar para o login';
+  marcarEstado(estadoDemo(), false);
+  render();
+}
+
 /* ==================== configuração / boot ==================== */
 function lerConfig(){
   var c = window.MEU_DINHEIRO || {};
@@ -1363,6 +1414,9 @@ function valeConfig(url, key){
     /^https:\/\/.+/.test(url);
 }
 
+el('verDemo').addEventListener('click', abrirDemo);
+el('verDemo2').addEventListener('click', abrirDemo);
+
 el('setupForm').addEventListener('submit', function(e){
   e.preventDefault();
   var url = el('sUrl').value.trim().replace(/\/+$/, '');
@@ -1376,10 +1430,14 @@ el('setupForm').addEventListener('submit', function(e){
 });
 
 function iniciar(){
+  if(/(^|[?&])demo(=|&|$)/.test(location.search)){ abrirDemo(); return; }
   if(!window.supabase || !window.supabase.createClient){
     el('splash').innerHTML = '<div class="gatebox"><h1>Ops</h1>' +
       '<p class="sub">A biblioteca do Supabase não carregou. Verifique a internet e recarregue a página.</p>' +
-      '<button class="btn" onclick="location.reload()">Tentar de novo</button></div>';
+      '<button class="btn" id="recarregar">Tentar de novo</button>' +
+      '<p class="subnote demolink"><button class="linkbtn" id="verDemo3">Ver a demonstração mesmo assim</button></p></div>';
+    el('recarregar').addEventListener('click', function(){ location.reload(); });
+    el('verDemo3').addEventListener('click', abrirDemo);
     return;
   }
   var cfg = lerConfig();

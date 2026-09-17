@@ -6,6 +6,14 @@
 </p>
 
 <p align="center">
+  <a href="https://kauanpfernandes.github.io/meu-dinheiro/?demo"><img src="https://img.shields.io/badge/▶%20ver%20a%20demonstração-145f55?style=for-the-badge" alt="Ver a demonstração"></a>
+</p>
+
+<p align="center">
+  <sub>Abre com dados de exemplo, sem cadastro e sem login. Dá para lançar, editar e navegar à vontade.</sub>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
   <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase">
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
@@ -41,7 +49,9 @@ uma parcela por mês, marcando `3/12` na linha.
 
 Tem também busca nos lançamentos do mês, exportação em CSV, tema claro e escuro,
 e dados de exemplo na primeira vez, para você ver a cara do app antes de digitar
-qualquer coisa.
+qualquer coisa. É esse modo que roda na
+**[demonstração](https://kauanpfernandes.github.io/meu-dinheiro/?demo)**: tudo
+funciona, nada é salvo, nada sai do seu navegador.
 
 <p align="center">
   <img src="docs/dashboard-escuro.png" alt="O mesmo painel no tema escuro" width="49%">
@@ -112,6 +122,7 @@ public/sw.js                   service worker (cache da casca do app)
 public/_headers                cabeçalhos de segurança
 supabase.sql                   tabelas, índices e políticas de RLS
 docs/SETUP.md                  como rodar isso na sua máquina
+.github/workflows/pages.yml    publica a demonstração a cada push
 ```
 
 ## Rodando
