@@ -1,0 +1,12 @@
+{
+  "name": "meu-dinheiro",
+  "private": true,
+  "type": "module",
+  "description": "Controle de gastos pessoal. O app não tem build: este arquivo existe só para rodar os testes.",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
