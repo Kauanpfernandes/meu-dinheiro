@@ -19,6 +19,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/PWA-5A0FC8?style=flat-square&logo=pwa&logoColor=white" alt="PWA">
   <img src="https://img.shields.io/badge/sem_build-0f766e?style=flat-square" alt="Sem build">
+  <a href="https://github.com/Kauanpfernandes/meu-dinheiro/actions/workflows/testes.yml"><img src="https://github.com/Kauanpfernandes/meu-dinheiro/actions/workflows/testes.yml/badge.svg" alt="Testes"></a>
 </p>
 
 ![O painel do Meu Dinheiro](docs/dashboard.png)
@@ -96,11 +97,30 @@ que nunca gera na hora certa.
 
 ### Sem framework e sem build
 
-São cerca de 1.400 linhas num `index.html`: HTML, CSS com variáveis para os dois
-temas, e JavaScript sem nenhuma dependência além do cliente do Supabase. Não é que
+HTML, CSS com variáveis para os dois temas, e JavaScript em módulos nativos do
+navegador, sem nenhuma dependência além do cliente do Supabase. Não é que
 framework seja ruim. É que, para um app deste tamanho, ele seria a parte mais
 pesada do projeto: a página inteira pesa menos que o bundle mínimo de qualquer um
 deles.
+
+Sem build não quer dizer tudo num arquivo só. O código está dividido pelo que
+cada parte faz, e a divisão que importa é esta: **as contas não sabem que existe
+tela**. `calculo.js` recebe a lista de lançamentos e devolve o que cai em cada
+mês, sem tocar em DOM, Supabase ou na data de hoje. `app.js` só pega o resultado
+e desenha.
+
+### Testes na parte que pode errar sem ninguém ver
+
+Um erro na tela aparece na hora. Um erro de conta não: a parcela 13 de 12, o
+gasto do dia 31 que some em fevereiro, a compra de novembro que não chega em
+janeiro. São esses que os testes cobrem, com o test runner que já vem no Node,
+sem instalar nada:
+
+```bash
+npm test
+```
+
+Os testes rodam no GitHub Actions a cada push.
 
 ### Instalável
 
@@ -110,19 +130,27 @@ então ele abre offline. Os dados, esses sim, precisam de rede.
 
 ## Stack
 
-`JavaScript` · `Supabase (Postgres + Auth + Row Level Security)` · `Netlify` · `PWA / Service Worker`
+`JavaScript (ES modules)` · `Supabase (Postgres + Auth + Row Level Security)` · `PWA / Service Worker` · `node:test`
+
+O app de uso real fica no **Netlify**. A [demonstração](https://kauanpfernandes.github.io/meu-dinheiro/?demo) fica no **GitHub Pages**, publicada pelo Actions a cada push.
 
 ## Estrutura
 
 ```
-public/index.html              o app inteiro, numa página só
+public/index.html              a estrutura das telas
+public/css/app.css             estilos e os dois temas
+public/js/calculo.js           as contas: o que cai em cada mês, parcelas, caixa acumulado
+public/js/util.js              dinheiro, datas e texto
+public/js/app.js               tela, eventos, login e conversa com o Supabase
 public/config.js               URL e chave anon do projeto Supabase
 public/manifest.webmanifest    metadados de instalação
 public/sw.js                   service worker (cache da casca do app)
 public/_headers                cabeçalhos de segurança
+tests/                         testes das contas e das utilidades
 supabase.sql                   tabelas, índices e políticas de RLS
 docs/SETUP.md                  como rodar isso na sua máquina
 .github/workflows/pages.yml    publica a demonstração a cada push
+.github/workflows/testes.yml   roda os testes a cada push
 ```
 
 ## Rodando
