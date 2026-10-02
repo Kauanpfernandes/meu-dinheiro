@@ -2,18 +2,22 @@
    Service worker do Meu Dinheiro.
 
    O que ele faz: guarda uma cópia da casca do app (a página, o
-   config, o ícone) para o app abrir rápido e continuar abrindo
-   mesmo sem internet. Os dados NÃO ficam aqui — eles vivem no
+   CSS, os módulos JS, o config, o ícone) para o app abrir rápido
+   e continuar abrindo mesmo sem internet. Os dados NÃO ficam aqui — eles vivem no
    Supabase, e sem rede o app mostra a tela de erro dele.
 
    Ao mudar o app, troque o número da versão abaixo: isso apaga
    o cache velho e obriga o navegador a baixar tudo de novo.
    ----------------------------------------------------------- */
-var VERSAO = 'meu-dinheiro-v1';
+var VERSAO = 'meu-dinheiro-v2';
 var CASCA = [
   './',
   './index.html',
   './config.js',
+  './css/app.css',
+  './js/app.js',
+  './js/util.js',
+  './js/calculo.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
